@@ -1,0 +1,31 @@
+member_id,age,gender,industry,country,is_team_account,n_colleagues_on_account,plan_tier,plan_days_per_week,membership_start,membership_end,last_badge_swipe,days_since_last_visit,total_visits,avg_weekly_visits,entitled_visits_last_period,actual_visits_last_period,meeting_room_hours,event_space_hours,guest_passes_issued,uses_meeting_rooms,uses_event_space,uses_guest_passes,uses_print,uses_mail_handling,uses_phone_booths,uses_day_passes,uses_storage,uses_bike_locker,n_renewals,lifetime_value
+CW015101,46.0,Male,Information Technology,Portugal,False,0,flex,3,2022-02-04,2022-04-19,2022-02-12,66,5,0.45,26.09,4,0.0,0.0,0.0,False,False,False,0,False,False,False,False,False,0,435.82
+CW000935,22.0,Female,Unknown,Portugal,False,0,FLEX,3,2022-12-18,2023-03-07,2023-01-21,45,18,1.56,26.09,11,1.7,0.0,1.0,True,False,True,0,False,False,False,False,False,0,505.28
+CW001390,44.0,Male,UNKNOWN,Portugal,False,0,hot_desk,2,28/10/2022,18/12/2022,17/11/2022,31,4,0.61,14.63,5,,0.0,,False,False,True,0,False,False,False,False,False,0,231.86
+CW003868,28.0,Female,Design & Creative,Portugal,True,1,hot_desk,2,2023-12-27,1970-01-01,2023-12-27,5,1,0.21,1.31,0,0.0,0.0,0.0,False,False,False,0,False,False,False,False,False,0,18.14
+CW005287,19.0,Female,Information Technology,Germany,False,0,private_office,7,2021-04-29,2023-10-15,2023-09-26,19,74,0.58,60.87,4,0.0,0.0,0.0,False,False,False,0,True,True,False,True,False,0,20683.24
+CW005845,35.0,Female,FINANCE,Portugal,True,3,dedicated_desk,5,2021-10-05,1970-01-01,2023-01-26,340,24,0.2,43.48,2,0.0,0.0,0.0,False,False,False,0,False,False,False,False,False,4,9403.99
+CW006678,30.0,Female,Consulting,Portugal,False,0,full_time,5,2021-07-21,2021-08-26,2021-08-13,13,8,1.56,25.84,9,,0.0,0.0,False,False,False,0,False,False,False,False,False,0,332.76
+CW007196,23.0,Male,Legal,Netherlands,False,0,hot_desk,2,2022-03-11,2022-08-11,2022-08-08,3,40,1.81,17.39,17,0.0,0.0,0.0,False,False,False,0,False,True,False,False,False,0,655.12
+CW008814,28.0,Female,Marketing & PR,Portugal,True,3,full_time,5,2022-02-20,2023-12-25,2023-12-22,3,103,1.07,43.48,10,133.8,71.1,114.0,True,True,True,0,True,False,False,False,False,0,13043.94
+CW009043,,Male,Health,Germany,False,-1,dedicated_desk,5,2021-06-11,2023-12-10,2023-12-05,5,547,4.2,43.48,34,0.0,0.0,0.0,False,False,False,1,True,True,False,True,False,2,12226.79
+CW009828,29.0,Female,Unknown,Spain,False,0,flex,3,2022-12-09,2023-07-01,2023-06-28,3,74,2.55,26.09,21,0.0,0.0,0.0,False,False,False,1,True,True,False,False,False,0,1422.36
+CW011277,35.0,Male,Consulting,,False,0,full_time,5,2022-03-20,2022-12-06,2022-11-26,10,131,3.51,43.48,33,13.2,0.0,0.0,True,False,False,0,False,True,False,False,False,0,2647.86
+CW012056,21.0,Male,Real Estate,Portugal,False,0,flex,3,2022-01-16,2022-03-15,2022-02-13,30,11,1.38,24.89,13,0.0,0.4,0.0,False,True,False,0,False,False,True,False,False,0,418.74
+CW013132,32.0,Female,Legal,Portugal,False,0,dedicated_desk,5,2021-08-28,2023-10-06,2023-10-04,2,407,3.71,43.48,31,30.1,17.6,0.0,True,True,False,1,False,True,True,True,False,4,11834.5
+CW014953,37.0,Female,Consulting,United Kingdom,False,0,fulltime,5,25/02/2021,18/07/2023,16/07/2023,2,491,3.94,43.48,41,,0.0,,True,False,False,1,False,False,False,False,False,0,0
+CW009043,,Male,Health,Germany,False,-1,dedicated_desk,5,2021-06-11,2023-12-10,2023-12-05,5,547,4.2,43.48,34,0.0,0.0,0.0,False,False,False,1,True,True,False,True,False,2,12226.79
+CW007196,23.0,Male,Legal,Netherlands,False,0,hot_desk,2,2022-03-11,2022-08-11,2022-08-08,3,40,1.81,17.39,17,0.0,0.0,0.0,False,False,False,0,False,True,False,False,False,0,655.12
+CW006678,30.0,Female,Consulting,Portugal,False,0,full_time,5,2021-07-21,2021-08-26,2021-08-13,13,8,1.56,25.84,9,,0.0,0.0,False,False,False,0,False,False,False,False,False,0,332.76
+CW000935,22.0,Female,Unknown,Portugal,False,0,FLEX,3,2022-12-18,2023-03-07,2023-01-21,45,18,1.56,26.09,11,1.7,0.0,1.0,True,False,True,0,False,False,False,False,False,0,505.28
+CW001390,44.0,Male,UNKNOWN,Portugal,False,0,hot_desk,2,28/10/2022,18/12/2022,17/11/2022,31,4,0.61,14.63,5,,0.0,,False,False,True,0,False,False,False,False,False,0,231.86
+CW012056,21.0,Male,Real Estate,Portugal,False,0,flex,3,2022-01-16,2022-03-15,2022-02-13,30,11,1.38,24.89,13,0.0,0.4,0.0,False,True,False,0,False,False,True,False,False,0,418.74
+CW005845,35.0,Female,FINANCE,Portugal,True,3,dedicated_desk,5,2021-10-05,1970-01-01,2023-01-26,340,24,0.2,43.48,2,0.0,0.0,0.0,False,False,False,0,False,False,False,False,False,4,9403.99
+CW008814,28.0,Female,Marketing & PR,Portugal,True,3,full_time,5,2022-02-20,2023-12-25,2023-12-22,3,103,1.07,43.48,10,133.8,71.1,114.0,True,True,True,0,True,False,False,False,False,0,13043.94
+CW014953,37.0,Female,Consulting,United Kingdom,False,0,fulltime,5,25/02/2021,18/07/2023,16/07/2023,2,491,3.94,43.48,41,,0.0,,True,False,False,1,False,False,False,False,False,0,0
+CW011277,35.0,Male,Consulting,,False,0,full_time,5,2022-03-20,2022-12-06,2022-11-26,10,131,3.51,43.48,33,13.2,0.0,0.0,True,False,False,0,False,True,False,False,False,0,2647.86
+CW009828,29.0,Female,Unknown,Spain,False,0,flex,3,2022-12-09,2023-07-01,2023-06-28,3,74,2.55,26.09,21,0.0,0.0,0.0,False,False,False,1,True,True,False,False,False,0,1422.36
+CW005287,19.0,Female,Information Technology,Germany,False,0,private_office,7,2021-04-29,2023-10-15,2023-09-26,19,74,0.58,60.87,4,0.0,0.0,0.0,False,False,False,0,True,True,False,True,False,0,20683.24
+CW003868,28.0,Female,Design & Creative,Portugal,True,1,hot_desk,2,2023-12-27,1970-01-01,2023-12-27,5,1,0.21,1.31,0,0.0,0.0,0.0,False,False,False,0,False,False,False,False,False,0,18.14
+CW013132,32.0,Female,Legal,Portugal,False,0,dedicated_desk,5,2021-08-28,2023-10-06,2023-10-04,2,407,3.71,43.48,31,30.1,17.6,0.0,True,True,False,1,False,True,True,True,False,4,11834.5
+CW015101,46.0,Male,Information Technology,Portugal,False,0,flex,3,2022-02-04,2022-04-19,2022-02-12,66,5,0.45,26.09,4,0.0,0.0,0.0,False,False,False,0,False,False,False,False,False,0,435.82

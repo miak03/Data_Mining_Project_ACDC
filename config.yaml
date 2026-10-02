@@ -1,0 +1,128 @@
+# Baseline pipeline configuration.
+# Nothing here is hardcoded in the source files below -- everything tunable lives in this one place.
+
+data:
+  path: "data/acdc_dataset.csv"
+  delimiter: ";"
+  output_path: "results/acdc_dataset_preprocessed.csv"
+  #sensitive_attr: "race"          # excluded from model features, used only to audit fairness
+  # kept in the data but never used as model features: the row id and COMPAS's own score
+  # (the redundant columns are removed earlier, by clean_dataset() -- see diagnostics.redundant_columns)
+  #drop_columns: ["id", "decile_score", "score_text"]
+
+diagnostics:
+  id_column: "member_id"
+  placeholder_tokens:
+    - ""
+    - " "
+    - "na"
+    - "n/a"
+    - "n.a"
+    - "nan"
+    - "null"
+    - "none"
+    - "unknown"
+    - "missing"
+    - "not available"
+    - "not applicable"
+    - "?"
+    - "-"
+    - "--"
+    - "\u2014"
+    - "???"
+    - "na."
+  validity_rules:
+    age: {min: 18, max: 100}
+    n_colleagues_on_account: {min: 0, max: 10}
+    plan_days_per_week: {min: 0, max: 7}
+    days_since_last_visit: {min: 0, max: 1300}
+    total_visits: {min: 0, max: 6600}
+    avg_weekly_visits: {min: 0, max: 100}
+    entitled_visits_last_period: {min: 0, max: 200}
+    actual_visits_last_period: {min: 0, max: 200}
+    meeting_room_hours: {min: 0, max: 50000}
+    event_space_hours: {min: 0, max: 605}
+    guest_passes_issued: {min: 0, max: 1000}
+    n_renewals: {min: 0, max: 7}
+    lifetime_value: {min: 0, max: 100000}
+  canonical_categories:
+    country:
+      "de": "Germany"
+      "germany": "Germany"
+      "deutschland": "Germany"
+      "pt": "Portugal"
+      "portugal": "Portugal"
+      "portucal": "Portugal"
+      "fr": "France"
+      "france": "France"
+      "ireland": "Ireland"
+      "ie": "Ireland"
+      "es": "Spain"
+      "spain": "Spain"
+      "espana": "Spain"
+      "espa\u00f1a": "Spain"
+      "uk": "United Kingdom"
+      "u.k.": "United Kingdom"
+      "gb": "United Kingdom"
+      "great britain": "United Kingdom"
+      "united kingdom": "United Kingdom"
+      "netherlands": "Netherlands"
+      "the netherlands": "Netherlands"
+      "holland": "Netherlands"
+      "nl": "Netherlands"
+      "other (europe)": "Other (Europe)"
+    gender:
+      "f": "Female"
+      "female": "Female"
+      "m": "Male"
+      "male": "Male"
+      "other": "Other"
+      "non-binary": "Other"
+      "prefer not to say": "Other"
+      "o": "Other"
+    industry:
+      "information technology": "Information Technology"
+      "it": "Information Technology"
+      "technology": "Information Technology"
+      "tech": "Information Technology"
+      "design & creative": "Design & Creative"
+      "design and creative": "Design & Creative"
+      "design/creative": "Design & Creative"
+      "marketing & pr": "Marketing & PR"
+      "marketing and pr": "Marketing & PR"
+      "marketing/pr": "Marketing & PR"
+      "health": "Health"
+      "education": "Education"
+      "legal": "Legal"
+      "consulting": "Consulting"
+      "finance": "Finance"
+      "other": "Other"
+      "realestate": "Real Estate"
+      "real estate": "Real Estate"
+      "real-estate": "Real Estate"
+    plan_tier:
+      "flex": "flex"
+      "hot desk": "hot_desk"
+      "hot_desk": "hot_desk"
+      "hotdesk": "hot_desk"
+      "dedicated desk": "dedicated_desk"
+      "dedicateddesk": "dedicated_desk"
+      "dedicated_desk": "dedicated_desk"
+      "private office": "private_office"
+      "privateoffice": "private_office"
+      "private_office": "private_office"
+      "full time": "full_time"
+      "full_time": "full_time"
+      "fulltime": "full_time"
+  boolean_columns:
+    - "is_team_account"
+    - "uses_meeting_rooms"
+    - "uses_event_space"
+    - "uses_guest_passes"
+    - "uses_print"
+    - "uses_mail_handling"
+    - "uses_phone_booths"
+    - "uses_day_passes"
+    - "uses_storage"
+    - "uses_bike_locker"
+  output_dir: "results/diagnostics"
