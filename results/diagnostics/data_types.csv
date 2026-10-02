@@ -29,4 +29,4 @@ uses_day_passes,bool,boolean,0
 uses_storage,bool,boolean,0
 uses_bike_locker,bool,boolean,0
 n_renewals,int64,float64,66
-lifetime_value,object,object,1166
+lifetime_value,object,float64,1169

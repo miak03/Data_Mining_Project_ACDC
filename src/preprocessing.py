@@ -42,10 +42,29 @@ def canonicalize_boolean_columns(df: pd.DataFrame, columns: list) -> pd.DataFram
     return out
 
 
+def normalize_lifetime_value(df: pd.DataFrame) -> pd.DataFrame:
+    """Remove euro symbols and thousands separators before parsing monetary values."""
+    out = df.copy()
+    column = "lifetime_value"
+    if column not in out.columns:
+        return out
+
+    cleaned = (
+        out[column]
+        .astype("string")
+        .str.replace("€", "", regex=False)
+        .str.replace(",", "", regex=False)
+        .str.strip()
+    )
+    out[column] = pd.to_numeric(cleaned, errors="coerce").astype("float64")
+    return out
+
+
 def clean_dataset(df: pd.DataFrame, config: dict) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Apply configured cleaning and return the data and its validity reports."""
     diagnostics_config = config["diagnostics"]
     out = df.drop_duplicates(keep="first").reset_index(drop=True).copy()
+    out = normalize_lifetime_value(out)
     validity_report, invalid_value_details = flag_invalid_values(
         out,
         diagnostics_config.get("validity_rules", {}),
