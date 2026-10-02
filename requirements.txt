@@ -1,3 +1,11 @@
-pandas
+ipywidgets
+jupyter
+jupyterlab
+matplotlib
 numpy
+pandas
 PyYAML
+ydata-profiling
+minisom>=2.3.5
+scikit-learn>=1.7.1
+seaborn>=0.13.2

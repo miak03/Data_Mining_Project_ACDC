@@ -45,6 +45,10 @@ diagnostics:
     guest_passes_issued: {min: 0, max: 1000}
     n_renewals: {min: 0, max: 7}
     lifetime_value: {min: 0, max: 100000}
+  date_order_rules:
+    - start_column: "membership_start"
+      end_column: "membership_end"
+      ignore_end_values: ["1970-01-01"]
   canonical_categories:
     country:
       "de": "Germany"

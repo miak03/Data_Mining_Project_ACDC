@@ -2,7 +2,7 @@
 """Configured cleaning steps for the ACDC dataset."""
 import pandas as pd
 
-from src.diagnostics import flag_invalid_values, write_diagnostics
+from src.diagnostics import flag_invalid_values
 
 
 def canonicalize_categories(df: pd.DataFrame, category_maps: dict, placeholder_tokens: list) -> pd.DataFrame:
@@ -42,16 +42,20 @@ def canonicalize_boolean_columns(df: pd.DataFrame, columns: list) -> pd.DataFram
     return out
 
 
-def clean_dataset(df: pd.DataFrame, config: dict) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Apply configured cleaning and return the cleaned data and validity report."""
+def clean_dataset(df: pd.DataFrame, config: dict) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Apply configured cleaning and return the data and its validity reports."""
     diagnostics_config = config["diagnostics"]
     out = df.drop_duplicates(keep="first").reset_index(drop=True).copy()
-    validity_report = flag_invalid_values(out, diagnostics_config.get("validity_rules", {}))
+    validity_report, invalid_value_details = flag_invalid_values(
+        out,
+        diagnostics_config.get("validity_rules", {}),
+        diagnostics_config.get("id_column"),
+    )
     out = canonicalize_categories(
         out,
         diagnostics_config.get("canonical_categories", {}),
         diagnostics_config.get("placeholder_tokens", []),
     )
     out = canonicalize_boolean_columns(out, diagnostics_config.get("boolean_columns", []))
-    return out, validity_report
+    return out, validity_report, invalid_value_details
 

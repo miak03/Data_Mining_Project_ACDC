@@ -1,0 +1,14 @@
+column,min_allowed,max_allowed,below_min,above_max,violations
+age,18,100,98,45,143
+n_colleagues_on_account,0,10,565,0,565
+plan_days_per_week,0,7,0,54,54
+days_since_last_visit,0,1300,56,0,56
+total_visits,0,6600,42,0,42
+avg_weekly_visits,0,100,0,0,0
+entitled_visits_last_period,0,200,0,0,0
+actual_visits_last_period,0,200,0,0,0
+meeting_room_hours,0,50000,16,0,16
+event_space_hours,0,605,8,0,8
+guest_passes_issued,0,1000,7,0,7
+n_renewals,0,7,66,0,66
+lifetime_value,0,100000,80,46,126
