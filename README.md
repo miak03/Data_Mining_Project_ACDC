@@ -11,3 +11,18 @@ customers into smaller groups that share similar characteristics or behaviors. F
 prioritize premium services and dedicated space, while others are cost-conscious and focused on basic
 desk access. By uncovering these patterns, ACDC can tailor its services and membership perks to meet
 the unique needs and behaviors of each segment.
+
+To do:
+K: gender/industry/country
+Mi: Date columns/redundancies
+Ma: feature engineering/slides
+F: feature engineering/lifetime value
+
+group task: answer the 4 questions
+1. Which findings were most unexpected or insightful, and what do they reveal about likely customer clusters? 
+2. What data limitations pose the greatest risks for clustering, and how might they be mitigated? 
+3. Which patterns in customer activity, including those revealed by engineered features, suggest natural 
+groupings, and what cluster characteristics do you anticipate? 
+4. How would you communicate these insights to non-technical stakeholders? Include a clear explanation of 
+the expected number of clusters, the most important differentiating features, and any anticipated 
+challenges. 
