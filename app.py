@@ -17,6 +17,29 @@ st.set_page_config(
 )
 
 MISSING_LABEL = "(Missing)"
+NUMERICAL_CHART_COLOR = "#8B7DBA"
+CATEGORICAL_CHART_COLOR = "#39796b"
+LIFETIME_VALUE_BINS = [
+    float("-inf"),
+    0,
+    500,
+    1_000,
+    2_500,
+    5_000,
+    10_000,
+    25_000,
+    float("inf"),
+]
+LIFETIME_VALUE_BUCKET_LABELS = [
+    "≤ €0",
+    "> €0 – €500",
+    "> €500 – €1,000",
+    "> €1,000 – €2,500",
+    "> €2,500 – €5,000",
+    "> €5,000 – €10,000",
+    "> €10,000 – €25,000",
+    "> €25,000",
+]
 EXCLUDED_COLUMNS = {
     "member_id",
     "membership_start",
@@ -25,8 +48,13 @@ EXCLUDED_COLUMNS = {
 }
 
 
+def clear_chart_selection() -> None:
+    """Reset the keyed chart widget to clear its selected points."""
+    st.session_state["category_chart_generation"] += 1
+
+
 @st.cache_data
-def load_dashboard_data() -> tuple[pd.DataFrame, int, dict]:
+def load_dashboard_data() -> tuple[pd.DataFrame, int]:
     """Remove duplicate rows and normalize categories and booleans without changing numbers."""
     config = load_config()
     raw_data = load_data(config)
@@ -43,7 +71,7 @@ def load_dashboard_data() -> tuple[pd.DataFrame, int, dict]:
     if "uses_print" not in boolean_columns:
         boolean_columns.append("uses_print")
     members = canonicalize_boolean_columns(members, boolean_columns)
-    return members, duplicates_removed, diagnostics
+    return members, duplicates_removed
 
 
 def numeric_lifetime_values(values: pd.Series) -> pd.Series:
@@ -57,103 +85,17 @@ def numeric_lifetime_values(values: pd.Series) -> pd.Series:
 
 
 def lifetime_value_buckets(values: pd.Series) -> pd.Series:
-    """Group parseable lifetime values into quantile ranges, retaining missing values."""
+    """Group lifetime values into fixed euro ranges, retaining missing values."""
     numeric_values = numeric_lifetime_values(values)
-    labels = pd.Series(MISSING_LABEL, index=values.index, dtype="object")
-    unique_values = numeric_values.nunique()
-    if unique_values == 0:
-        return labels
-
-    buckets = pd.qcut(
-        numeric_values.dropna(),
-        q=min(10, unique_values),
-        duplicates="drop",
+    buckets = pd.cut(
+        numeric_values,
+        bins=LIFETIME_VALUE_BINS,
+        labels=LIFETIME_VALUE_BUCKET_LABELS,
+        include_lowest=True,
     )
-    labels.loc[buckets.index] = buckets.map(
-        lambda interval: f"€{interval.left:,.0f} – €{interval.right:,.0f}"
-    ).astype(str)
-    return labels
-
-
-def build_quality_report(
-    members: pd.DataFrame,
-    diagnostics: dict,
-) -> pd.DataFrame:
-    """Describe numeric and date anomalies while preserving their original values."""
-    issue_rows: list[dict[str, object]] = []
-    id_column = diagnostics.get("id_column")
-
-    def add_issues(column: str, mask: pd.Series, issue: str) -> None:
-        if not mask.any():
-            return
-        for index, value in members.loc[mask, column].items():
-            row: dict[str, object] = {
-                "column": column,
-                "observed_value": str(value),
-                "issue": issue,
-            }
-            if id_column and id_column in members.columns:
-                row[id_column] = members.at[index, id_column]
-            issue_rows.append(row)
-
-    for column, bounds in diagnostics.get("validity_rules", {}).items():
-        if column not in members.columns:
-            continue
-        numeric = (
-            numeric_lifetime_values(members[column])
-            if column == "lifetime_value"
-            else pd.to_numeric(members[column], errors="coerce")
-        )
-        invalid = numeric.notna() & (
-            (numeric < bounds.get("min", float("-inf")))
-            | (numeric > bounds.get("max", float("inf")))
-        )
-        add_issues(
-            column,
-            invalid,
-            f"Outside configured range [{bounds.get('min', '−∞')}, "
-            f"{bounds.get('max', '∞')}]",
-        )
-        not_numeric = members[column].notna() & numeric.isna()
-        add_issues(column, not_numeric, "Non-empty value could not be parsed as a number")
-
-    for rule in diagnostics.get("date_order_rules", []):
-        start_column = rule["start_column"]
-        end_column = rule["end_column"]
-        if start_column not in members.columns or end_column not in members.columns:
-            continue
-        start_dates = pd.to_datetime(members[start_column], errors="coerce")
-        end_dates = pd.to_datetime(members[end_column], errors="coerce")
-        ignored_end_dates = pd.to_datetime(
-            rule.get("ignore_end_values", []),
-            errors="coerce",
-        )
-        invalid_order = (
-            start_dates.notna()
-            & end_dates.notna()
-            & end_dates.lt(start_dates)
-            & ~end_dates.isin(ignored_end_dates)
-        )
-        for column in (start_column, end_column):
-            malformed = members[column].notna() & pd.to_datetime(
-                members[column],
-                errors="coerce",
-            ).isna()
-            add_issues(column, malformed, "Non-empty value could not be parsed as a date")
-        add_issues(end_column, invalid_order, f"End date is before {start_column}")
-
-        for sentinel in rule.get("ignore_end_values", []):
-            sentinel_mask = members[end_column].astype("string").eq(str(sentinel))
-            add_issues(
-                end_column,
-                sentinel_mask,
-                "Configured sentinel date (retained; often represents no end date)",
-            )
-
-    columns = ["column", "observed_value", "issue"]
-    if id_column and id_column in members.columns:
-        columns.insert(0, id_column)
-    return pd.DataFrame(issue_rows, columns=columns)
+    if numeric_values.isna().any():
+        buckets = buckets.cat.add_categories([MISSING_LABEL]).fillna(MISSING_LABEL)
+    return buckets
 
 
 def category_options(data: pd.DataFrame, column: str) -> list[str]:
@@ -185,18 +127,26 @@ def display_category(value: object) -> str:
     return MISSING_LABEL if pd.isna(value) else str(value)
 
 
+def selected_plotly_points(chart_key: str) -> list[dict]:
+    """Return points selected in an interactive Plotly chart."""
+    chart_state = st.session_state.get(chart_key, {})
+    selection = chart_state.get("selection", {})
+    return selection.get("points", [])
+
+
 @st.cache_data
 def csv_bytes(data: pd.DataFrame) -> bytes:
     return data.to_csv(index=False).encode("utf-8")
 
 
+st.session_state.setdefault("category_chart_generation", 0)
+
 try:
-    members, duplicates_removed, diagnostics = load_dashboard_data()
+    members, duplicates_removed = load_dashboard_data()
 except (FileNotFoundError, KeyError, OSError, pd.errors.ParserError) as error:
     st.error(f"Could not load the configured member dataset: {error}")
     st.stop()
 
-quality_report = build_quality_report(members, diagnostics)
 numeric_columns = [
     column
     for column in members.select_dtypes(include="number").columns
@@ -213,23 +163,77 @@ breakdown_columns = categorical_columns + (
 
 st.markdown(
     """
-    <div style="padding: 1.1rem 0 0.4rem">
-      <div style="color:#55736b;font-size:.8rem;font-weight:700;letter-spacing:.14em">
-        AMAZING CREATIVE DESK COWORKING
+    <div style="display:flex;align-items:center;gap:1.1rem;padding:1.1rem 0 .4rem">
+      <div style="flex:1">
+        <div style="color:#7663a6;font-size:.8rem;font-weight:700;letter-spacing:.14em">
+          AMAZING CREATIVE DESK COWORKING
+        </div>
+        <h1 style="margin:.25rem 0">Member Explorer</h1>
+        <div style="color:#68747b">Explore who our members are, how they use the space,
+        and how membership patterns differ across segments.</div>
       </div>
-      <h1 style="margin:.25rem 0">Member Explorer</h1>
-      <div style="color:#68747b">Explore who our members are, how they use the space,
-      and how membership patterns differ across segments.</div>
+      <svg viewBox="0 0 100 100" width="92" height="92" role="img"
+           aria-label="ACDC logo">
+        <circle cx="50" cy="50" r="46" fill="#F3F0F8" stroke="#7663A6"
+                stroke-width="3"/>
+        <g fill="#51456F" font-family="Arial, sans-serif" font-size="22"
+           font-weight="700" text-anchor="middle">
+          <text x="50" y="29">C</text>
+          <text x="29" y="57">A</text>
+          <text x="71" y="57">D</text>
+          <text x="50" y="85">C</text>
+        </g>
+      </svg>
     </div>
     """,
     unsafe_allow_html=True,
 )
 
 with st.sidebar:
-    st.header("Filter members")
+    st.header(":material/filter_alt: Filter members")
     st.caption("Filters apply to every chart and table.")
 
     filtered = members
+    if "membership_start" in members:
+        membership_start_dates = pd.to_datetime(
+            members["membership_start"],
+            errors="coerce",
+        )
+        valid_start_dates = membership_start_dates.dropna()
+        if valid_start_dates.empty:
+            st.info("No valid membership start dates are available to filter.")
+        else:
+            start_date = st.date_input(
+                "Start date",
+                value=valid_start_dates.min().date(),
+                min_value=valid_start_dates.min().date(),
+                max_value=valid_start_dates.max().date(),
+                key="filter_start_date",
+            )
+            end_date = st.date_input(
+                "End date",
+                value=valid_start_dates.max().date(),
+                min_value=valid_start_dates.min().date(),
+                max_value=valid_start_dates.max().date(),
+                key="filter_end_date",
+            )
+            include_missing_start_dates = st.checkbox(
+                "Include members without a valid start date",
+                value=True,
+                key="filter_missing_start_dates",
+            )
+            if start_date > end_date:
+                st.error("Start date must be on or before end date.")
+                filtered = filtered.iloc[0:0]
+            else:
+                date_mask = membership_start_dates.loc[filtered.index].between(
+                    pd.Timestamp(start_date),
+                    pd.Timestamp(end_date),
+                )
+                if include_missing_start_dates:
+                    date_mask |= membership_start_dates.loc[filtered.index].isna()
+                filtered = filtered.loc[date_mask]
+
     for column, title in (
         ("country", "Country"),
         ("industry", "Industry"),
@@ -259,19 +263,6 @@ with st.sidebar:
         )
         filtered = filter_category(filtered, "is_team_account", selected_teams)
 
-    if "membership_end" in members:
-        membership_status = st.selectbox(
-            "Membership status",
-            ["All", "Active", "Former"],
-        )
-        if membership_status != "All":
-            active_members = members["membership_end"].astype(str).eq("1970-01-01")
-            filtered = filtered.loc[
-                active_members.loc[filtered.index]
-                if membership_status == "Active"
-                else ~active_members.loc[filtered.index]
-            ]
-
     if "age" in numeric_columns and filtered["age"].notna().any():
         age_min = float(filtered["age"].min())
         age_max = float(filtered["age"].max())
@@ -290,6 +281,25 @@ with st.sidebar:
             if include_missing_age:
                 age_mask |= filtered["age"].isna()
             filtered = filtered.loc[age_mask]
+
+default_breakdown_column = (
+    "plan_tier" if "plan_tier" in breakdown_columns else breakdown_columns[0]
+)
+breakdown_column = st.session_state.get("category_column", default_breakdown_column)
+category_chart_key = (
+    f"category_distribution_{st.session_state['category_chart_generation']}"
+)
+selected_categories = [
+    point["y"]
+    for point in selected_plotly_points(category_chart_key)
+    if "y" in point
+]
+if breakdown_column == "lifetime_value":
+    if selected_categories:
+        selected_buckets = lifetime_value_buckets(filtered["lifetime_value"])
+        filtered = filtered.loc[selected_buckets.isin(selected_categories)]
+elif selected_categories:
+    filtered = filter_category(filtered, breakdown_column, selected_categories)
 
 st.markdown("### At a glance")
 metric_columns = st.columns(4)
@@ -319,14 +329,12 @@ if filtered.empty:
     st.info("No members match these filters. Adjust or clear a filter to continue.")
     st.stop()
 
-overview_tab, explore_tab, data_tab, quality_tab = st.tabs(
-    ["Overview", "Explore a segment", "Filtered records", "Data quality"]
-)
+overview_tab, data_tab = st.tabs(["Overview", "Filtered records"])
 
 with overview_tab:
     left, right = st.columns(2)
     with left:
-        st.subheader("Attribute distribution")
+        st.subheader("Numerical distribution")
         histogram_column = st.selectbox(
             "Choose a numeric attribute",
             numeric_columns,
@@ -337,7 +345,7 @@ with overview_tab:
             filtered,
             x=histogram_column,
             nbins=30,
-            color_discrete_sequence=["#39796b"],
+            color_discrete_sequence=[NUMERICAL_CHART_COLOR],
             labels={histogram_column: histogram_column.replace("_", " ").title()},
         )
         histogram.update_layout(
@@ -349,7 +357,7 @@ with overview_tab:
         st.plotly_chart(histogram, width="stretch")
 
     with right:
-        st.subheader("Member mix")
+        st.subheader("Categorical/Boolean distribution")
         breakdown_column = st.selectbox(
             "Break down members by",
             breakdown_columns,
@@ -359,9 +367,11 @@ with overview_tab:
                 else 0
             ),
             key="category_column",
+            on_change=clear_chart_selection,
         )
         if breakdown_column == "lifetime_value":
             bucket_labels = lifetime_value_buckets(filtered["lifetime_value"])
+            category_order = list(bucket_labels.cat.categories)
             counts = (
                 bucket_labels.value_counts(sort=False)
                 .rename_axis("Lifetime value range")
@@ -369,6 +379,7 @@ with overview_tab:
             )
             category_column = "Lifetime value range"
         else:
+            category_order = None
             category_column = breakdown_column
             counts = (
                 filtered[category_column]
@@ -378,101 +389,46 @@ with overview_tab:
                 .reset_index(name="Members")
             )
             counts = counts.head(15)
-        counts = counts.sort_values("Members")
+        if category_order is None:
+            counts = counts.sort_values("Members")
         bar_chart = px.bar(
             counts,
             x="Members",
             y=category_column,
             orientation="h",
-            color_discrete_sequence=["#e0a64d"],
+            color_discrete_sequence=[CATEGORICAL_CHART_COLOR],
             labels={category_column: category_column.replace("_", " ").title()},
         )
-        bar_chart.update_layout(yaxis_title=None, xaxis_title="Members")
-        st.plotly_chart(bar_chart, width="stretch")
+        bar_chart.update_layout(
+            yaxis_title=None,
+            xaxis_title="Members",
+            showlegend=False,
+            clickmode="event+select",
+        )
+        if category_order is not None:
+            bar_chart.update_yaxes(
+                categoryorder="array",
+                categoryarray=category_order,
+            )
+        st.plotly_chart(
+            bar_chart,
+            width="stretch",
+            key=category_chart_key,
+            on_select="rerun",
+            selection_mode="points",
+        )
+        if selected_categories:
+            st.caption(f"Focused on: {', '.join(selected_categories)}")
+            st.button(
+                "Clear chart selection",
+                key="clear_chart_selection",
+                on_click=clear_chart_selection,
+            )
 
     st.caption(
         "Category charts show up to the 15 most common values. "
-        "All charts reflect the filters selected in the sidebar."
-    )
-
-with explore_tab:
-    st.subheader("Compare and drill into member segments")
-    st.caption("Choose a segment below to compare its profile with the filtered population.")
-    segment_column = st.selectbox(
-        "Segment by",
-        categorical_columns,
-        index=(
-            categorical_columns.index("plan_tier")
-            if "plan_tier" in categorical_columns
-            else 0
-        ),
-        key="segment_column",
-    )
-    segment_value = st.selectbox(
-        "Choose a segment",
-        category_options(filtered, segment_column),
-        key="segment_value",
-    )
-    segment_members = filter_category(filtered, segment_column, [segment_value])
-
-    segment_metrics = st.columns(3)
-    segment_metrics[0].metric("Members in segment", f"{len(segment_members):,}")
-    if "avg_weekly_visits" in segment_members:
-        visits = segment_members["avg_weekly_visits"].mean()
-        segment_metrics[1].metric(
-            "Avg. weekly visits",
-            f"{visits:.1f}" if pd.notna(visits) else "—",
-        )
-    if "lifetime_value" in segment_members:
-        value = numeric_lifetime_values(segment_members["lifetime_value"]).median()
-        segment_metrics[2].metric(
-            "Median lifetime value",
-            f"€{value:,.0f}" if pd.notna(value) else "—",
-        )
-
-    detail_left, detail_right = st.columns(2)
-    with detail_left:
-        st.markdown("**Age profile**")
-        if "age" in segment_members and segment_members["age"].notna().any():
-            age_chart = px.histogram(
-                segment_members,
-                x="age",
-                nbins=25,
-                color_discrete_sequence=["#39796b"],
-                labels={"age": "Age"},
-            )
-            age_chart.update_layout(xaxis_title="Age", yaxis_title="Members")
-            st.plotly_chart(age_chart, width="stretch")
-        else:
-            st.info("Age data is not available for this segment.")
-    with detail_right:
-        st.markdown("**Visit frequency**")
-        if (
-            "avg_weekly_visits" in segment_members
-            and segment_members["avg_weekly_visits"].notna().any()
-        ):
-            visits_chart = px.histogram(
-                segment_members,
-                x="avg_weekly_visits",
-                nbins=25,
-                color_discrete_sequence=["#e0a64d"],
-                labels={"avg_weekly_visits": "Average weekly visits"},
-            )
-            visits_chart.update_layout(
-                xaxis_title="Average weekly visits",
-                yaxis_title="Members",
-            )
-            st.plotly_chart(visits_chart, width="stretch")
-        else:
-            st.info("Visit data is not available for this segment.")
-
-    st.markdown("**Segment members**")
-    st.dataframe(segment_members, width="stretch", hide_index=True)
-    st.download_button(
-        "Download segment as CSV",
-        data=csv_bytes(segment_members),
-        file_name="acdc_member_segment.csv",
-        mime="text/csv",
+        "Click a category to focus all charts and records on that group. "
+        "Sidebar filters also apply."
     )
 
 with data_tab:
@@ -483,50 +439,5 @@ with data_tab:
         "Download filtered records as CSV",
         data=csv_bytes(filtered),
         file_name="acdc_filtered_members.csv",
-        mime="text/csv",
-    )
-
-with quality_tab:
-    st.subheader("Data quality and unusual values")
-    st.caption(
-        "Values outside configured ranges, unusual dates, and unparsable values are "
-        "reported here, not corrected or removed. The data table and charts retain "
-        "the source numeric values."
-    )
-
-    if diagnostics.get("id_column") in filtered.columns:
-        filtered_ids = set(filtered[diagnostics["id_column"]])
-        filtered_quality = quality_report.loc[
-            quality_report[diagnostics["id_column"]].isin(filtered_ids)
-        ]
-    else:
-        filtered_quality = quality_report
-
-    quality_metrics = st.columns(4)
-    range_issue_count = int(
-        filtered_quality["issue"].str.startswith("Outside configured range").sum()
-    )
-    sentinel_count = int(
-        filtered_quality["issue"]
-        .str.startswith("Configured sentinel date")
-        .sum()
-    )
-    parse_issue_count = int(
-        filtered_quality["issue"].str.contains("could not be parsed").sum()
-    )
-    quality_metrics[0].metric("Exact duplicate rows removed", f"{duplicates_removed:,}")
-    quality_metrics[1].metric("Out-of-range values", f"{range_issue_count:,}")
-    quality_metrics[2].metric("Sentinel dates retained", f"{sentinel_count:,}")
-    quality_metrics[3].metric("Unparsed values", f"{parse_issue_count:,}")
-
-    st.caption(
-        f"Showing {len(filtered_quality):,} quality findings for the currently "
-        "filtered members. Existing missing values are not included as findings."
-    )
-    st.dataframe(filtered_quality, width="stretch", hide_index=True)
-    st.download_button(
-        "Download quality findings as CSV",
-        data=csv_bytes(filtered_quality),
-        file_name="acdc_data_quality_findings.csv",
         mime="text/csv",
     )

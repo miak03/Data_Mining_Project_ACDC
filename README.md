@@ -2,10 +2,13 @@
 
 ## Interactive member dashboard
 
-The Streamlit dashboard provides filters for country, industry, plan tier, gender,
-account type, membership status, and age. Its overview shows attribute distributions
-and member mix; the segment explorer drills into a selected group and lets you
-download the matching records as CSV.
+The Streamlit dashboard provides filters for membership start date, country,
+industry, plan tier, gender, account type, and age. Members with
+missing or invalid membership start dates are included by default. Its overview
+shows attribute distributions and member mix, and a filtered-records view lets you
+inspect and download matching records as CSV. Click a category in the categorical
+distribution chart to focus all dashboard views on that group; click it again to
+clear the chart selection.
 
 Install the project dependencies and start the dashboard from the repository root:
 
@@ -16,9 +19,7 @@ python -m streamlit run app.py
 
 The dashboard reads the dataset configured in `config.yaml`, removes exact duplicate
 rows, standardizes configured categories and boolean fields, and preserves numeric
-values even when they are outside the configured validity ranges. The **Data quality**
-tab reports out-of-range values, date anomalies (including retained sentinel dates),
-and non-empty values that could not be parsed, without changing the displayed data.
+values even when they are outside the configured validity ranges.
 
 Consumers today are becoming more selective about the business they support and where they spend
 their money. This makes it vital for companies to develop a deep understanding of their customer base in
